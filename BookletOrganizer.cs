@@ -1,5 +1,4 @@
 using DV.Logic.Job;
-using DV.Utils;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,12 +8,34 @@ namespace DvMod.BookletOrganizer
 {
     public static class BookletOrganizer
     {
+        private enum OrganizerJobType
+        {
+            Unknown,
+            Shunting,
+            Transport,
+        }
+
+        private static OrganizerJobType GetOrganizerJobType(Job job)
+        {
+            return job.jobType switch
+            {
+                JobType.ShuntingLoad => OrganizerJobType.Shunting,
+                JobType.ShuntingUnload => OrganizerJobType.Shunting,
+                JobType.Transport => OrganizerJobType.Transport,
+                JobType.EmptyHaul => OrganizerJobType.Transport,
+                JobType.ComplexTransport => OrganizerJobType.Transport,
+                _ => OrganizerJobType.Unknown,
+            };
+        }
+
+        private static string DestinationStation(Job job) => job.chainData.chainDestinationYardId;
+
         private class BookletSpawnState
         {
             public int lastJobCount = 0;
             public float lastJobCountChangeTime = 0;
 
-            private static Dictionary<string, BookletSpawnState> instances = new Dictionary<string, BookletSpawnState>();
+            private static readonly Dictionary<string, BookletSpawnState> instances = new Dictionary<string, BookletSpawnState>();
             public static BookletSpawnState Instance(string stationId)
             {
                 if (!instances.TryGetValue(stationId, out var state))
@@ -23,40 +44,53 @@ namespace DvMod.BookletOrganizer
             }
         }
 
-        public const float PositionRandomizationRange = 0.01f;
-        public const float RotationRandomizationRange = 2f;
+        private const float PositionRandomizationRange = 0.01f;
+        private const float RotationRandomizationRange = 2f;
 
-        private static bool IsShuntingJob(Job job) =>
-            job.jobType == JobType.ShuntingLoad || job.jobType == JobType.ShuntingUnload;
-        private static string DestinationStation(Job job) =>
-            job.chainData.chainDestinationYardId;
+        private const float XSpaceToUse = 0.95f;
+        private const float ZSpaceToUse = 1f;
+        private const float InitialJobXSpaceToUse = 0.8f;
+        private const float MaxZSpacing = 0.2f;
+        private const int MaxRowsPerType = 2;
 
-        private const float MaxXSpacing = 0.2f;
-        private const float MaxYSpacing = 0.7f;
-        private const float NumRows = 3;
+        private static int GetJobsPerRow(int numJobs)
+        {
+            var minZSpacing = (float)MaxRowsPerType / numJobs;
+            var zSpacing = Mathf.Min(minZSpacing, MaxZSpacing);
+            return Mathf.CeilToInt(1f / zSpacing);
+        }
+
+        private static IEnumerable<IEnumerable<T>> Grouped<T>(this IEnumerable<T> enumerable, int groupSize)
+        {
+            var remaining = enumerable;
+            do
+            {
+                yield return remaining.Take(groupSize);
+                remaining = remaining.Skip(groupSize);
+            } while (remaining.Any());
+        }
+
         private static IEnumerable<(Job, float, float)> InitialBookletPositions(IEnumerable<Job> jobs)
         {
-            var hasShuntingJobs = jobs.Any(IsShuntingJob);
-            var shuntingJobs = jobs.Where(IsShuntingJob).OrderBy(job => job.chainData.chainDestinationYardId);
-            var shuntingJobSpacing = Mathf.Min(MaxXSpacing, 1f / shuntingJobs.Count());
-            Main.DebugLog(() => $"{shuntingJobs.Count()} shunting jobs, spacing={shuntingJobSpacing}");
+            var jobGroups = jobs
+                .ToLookup(GetOrganizerJobType)
+                .OrderBy(g => g.Key)
+                .Select(g => g.OrderBy(DestinationStation));
 
-            var transportJobs = jobs.Where(job => !IsShuntingJob(job)).OrderBy(job => job.chainData.chainDestinationYardId);
-            var spacing = Mathf.Min(MaxXSpacing, (float)NumRows / (float)transportJobs.Count());
-            var jobsPerRow = Mathf.FloorToInt(1f / spacing);
-            var numRows = (hasShuntingJobs ? 1 : 0) + Mathf.Ceil((float)transportJobs.Count() / (float)jobsPerRow);
-            Main.DebugLog(() => $"{transportJobs.Count()} transport jobs, spacing={spacing}, jobsPerRow={jobsPerRow}, numRows={numRows}");
+            var jobsPerRowByGroup = jobGroups.Select(g => GetJobsPerRow(g.Count()));
+            var rows = jobGroups.SelectMany(group => group.Grouped(GetJobsPerRow(group.Count())));
+            Main.DebugLog(() => string.Join("\n", rows.Select(row => string.Join(",", row.Select(job => job.ID)))));
 
-            var ySpacing = Mathf.Min(MaxYSpacing, numRows == 1 ? 0f : (1f / (numRows - 1)));
+            var numRows = rows.Count();
+            var xSpacing = numRows == 1 ? 0f : (InitialJobXSpaceToUse / (numRows - 1));
+            IEnumerable<(Job job, float z, float x)> jobTuples = rows.SelectMany((jobsInRow, rowIndex) =>
+            {
+                var gapCount = jobsInRow.Count() - 1;
+                var zSpacing = Mathf.Min(MaxZSpacing, gapCount == 0 ? 0f : 1f / gapCount);
+                return jobsInRow.Select((job, indexInRow) => (job, indexInRow * zSpacing, rowIndex * xSpacing));
+            });
 
-            var shuntingJobTuples = shuntingJobs.Select((job, i) => (job, i * shuntingJobSpacing, 0f));
-            var transportJobTuples = transportJobs
-                .Select((job, i) => (job, i))
-                .GroupBy(t => t.Item2 / jobsPerRow, t => t.Item1)
-                .SelectMany(grouping => grouping.Select((job, i) => (job, i * spacing, (hasShuntingJobs ? grouping.Key + 1 : grouping.Key) * ySpacing)));
-            
-            var jobTuples = shuntingJobTuples.Concat(transportJobTuples);
-            Main.DebugLog(() => string.Join(",", jobTuples.Select(t => $"({t.Item1.ID}->{t.Item1.chainData.chainDestinationYardId}@{t.Item2},{t.Item3})")));
+            Main.DebugLog(() => string.Join(",", jobTuples.Select(t => $"({t.job.ID}->{t.job.chainData.chainDestinationYardId}@{t.z},{t.x})")));
 
             return jobTuples;
         }
@@ -103,9 +137,9 @@ namespace DvMod.BookletOrganizer
                             var localX = x + Random.Range(-PositionRandomizationRange, PositionRandomizationRange);
                             var localZ = z + Random.Range(-PositionRandomizationRange, PositionRandomizationRange);
                             var localPosition = new Vector3(
-                                -__instance.jobBookletSpawnSurface.xSize * (localX - 0.5f) * 0.9f,
+                                __instance.jobBookletSpawnSurface.xSize * (0.5f - localX) * XSpaceToUse,
                                 y,
-                                -__instance.jobBookletSpawnSurface.zSize * (localZ - 0.5f) * 0.9f);
+                                __instance.jobBookletSpawnSurface.zSize * (0.5f - localZ) * ZSpaceToUse);
                             Main.DebugLog(() => $"{job.ID} @ {localPosition}");
                             var globalPosition = __instance.jobBookletSpawnSurface.transform.TransformPoint(localPosition);
                             y += 0.001f;
