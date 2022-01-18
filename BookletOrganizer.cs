@@ -33,20 +33,6 @@ namespace DvMod.BookletOrganizer
 
         private static string DestinationStation(Job job) => job.chainData.chainDestinationYardId;
 
-        private class BookletSpawnState
-        {
-            public int lastJobCount = 0;
-            public float lastJobCountChangeTime = 0;
-
-            private static readonly Dictionary<string, BookletSpawnState> instances = new Dictionary<string, BookletSpawnState>();
-            public static BookletSpawnState Instance(string stationId)
-            {
-                if (!instances.TryGetValue(stationId, out var state))
-                    state = instances[stationId] = new BookletSpawnState();
-                return state;
-            }
-        }
-
         private const float PositionRandomizationRange = 0.01f;
         private const float RotationRandomizationRange = 2f;
 
@@ -114,20 +100,13 @@ namespace DvMod.BookletOrganizer
                 }
                 if (__instance.stationRange.IsPlayerInRangeForBookletGeneration(__instance.stationRange.PlayerSqrDistanceFromStationOffice) && __instance.attemptJobOverviewGeneration)
                 {
-                    var state = BookletSpawnState.Instance(__instance.logicStation.ID);
-                    if (state.lastJobCount != __instance.logicStation.availableJobs.Count)
+                    if (__instance.ProceduralJobsController.generationCoro != null)
                     {
-                        state.lastJobCount = __instance.logicStation.availableJobs.Count;
-                        state.lastJobCountChangeTime = Time.time;
-                        Main.DebugLog(() => $"Number of jobs changed at {__instance.logicStation.ID}");
-                    }
-                    else if (state.lastJobCountChangeTime > Time.time - 0.5f)
-                    {
-                        Main.DebugLog(() => $"Waiting to generate job booklets for {__instance.logicStation.ID}");
+                        Main.DebugLog(() => $"{Time.time}: Waiting to generate job booklets for {__instance.logicStation.ID}");
                     }
                     else
                     {
-                        Main.DebugLog(() => $"Generating job booklets for {__instance.logicStation.ID}");
+                        Main.DebugLog(() => $"{Time.time}: Generating job booklets for {__instance.logicStation.ID}");
                         var isInitialGeneration = __instance.processedNewJobs.Count == 0;
                         var toGenerate = __instance.logicStation.availableJobs.Where(job => !__instance.processedNewJobs.Contains(job));
 
