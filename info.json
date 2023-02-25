@@ -2,7 +2,7 @@
   "Id": "BookletOrganizer",
   "DisplayName": "Booklet Organizer",
   "Author": "Zeibach",
-  "Version": "0.1.0",
+  "Version": "0.2.0",
   "AssemblyName": "BookletOrganizer.dll",
   "EntryMethod": "DvMod.BookletOrganizer.Main.Load",
   "HomePage": "https://www.nexusmods.com/derailvalley/mods/322",

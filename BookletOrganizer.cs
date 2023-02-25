@@ -52,10 +52,12 @@ namespace DvMod.BookletOrganizer
         private const float InitialJobXSpaceToUse = 0.8f;
         private const float MaxZSpacing = 0.2f;
         private const int MaxRowsPerType = 2;
+        private const int MaxRows = 3;
 
         private static int GetJobsPerRow(int numJobs)
         {
-            var minZSpacing = (float)MaxRowsPerType / numJobs;
+            var maxRows = Main.settings.groupRows ? MaxRowsPerType : MaxRows;
+            var minZSpacing = (float)maxRows / numJobs;
             var zSpacing = Mathf.Min(minZSpacing, MaxZSpacing);
             return Mathf.CeilToInt(1f / zSpacing);
         }
@@ -72,12 +74,21 @@ namespace DvMod.BookletOrganizer
 
         private static IEnumerable<(Job, float, float)> InitialBookletPositions(IEnumerable<Job> jobs)
         {
-            var jobGroups = jobs
-                .ToLookup(GetOrganizerJobType)
-                .OrderBy(g => g.Key)
-                .Select(g => g.OrderBy(DestinationStation));
+            IEnumerable<IOrderedEnumerable<Job>> jobGroups;
+            if (Main.settings.groupRows)
+            {
+                jobGroups = jobs
+                 .ToLookup(GetOrganizerJobType)
+                 .OrderBy(g => g.Key)
+                 .Select(g => g.OrderBy(DestinationStation));
+            }
+            else
+            {
+                jobGroups = jobs
+                    .ToLookup(g => OrganizerJobType.Unknown)
+                    .Select(g=> g.OrderBy(GetOrganizerJobType).ThenBy(DestinationStation));
+            }
 
-            var jobsPerRowByGroup = jobGroups.Select(g => GetJobsPerRow(g.Count()));
             var rows = jobGroups.SelectMany(group => group.Grouped(GetJobsPerRow(group.Count())));
             Main.DebugLog(() => string.Join("\n", rows.Select(row => string.Join(",", row.Select(job => job.ID)))));
 
@@ -142,7 +153,7 @@ namespace DvMod.BookletOrganizer
                                 __instance.jobBookletSpawnSurface.zSize * (0.5f - localZ) * ZSpaceToUse);
                             Main.DebugLog(() => $"{job.ID} @ {localPosition}");
                             var globalPosition = __instance.jobBookletSpawnSurface.transform.TransformPoint(localPosition);
-                            y += 0.001f;
+                            y += Main.settings.frontToBack ? -0.003f : 0.003f;
 
                             var angle = Random.Range(-RotationRandomizationRange, RotationRandomizationRange);
                             var rotation = __instance.jobBookletSpawnSurface.transform.rotation * Quaternion.Euler(0f, -90f + angle, 0f);
