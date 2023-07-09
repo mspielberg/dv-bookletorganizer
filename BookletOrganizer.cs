@@ -2,6 +2,9 @@ using DV.Logic.Job;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
+using DV.Booklets;
+using DV.ThingTypes;
+using DV.Utils;
 using UnityEngine;
 
 namespace DvMod.BookletOrganizer
@@ -105,7 +108,7 @@ namespace DvMod.BookletOrganizer
         {
             public static bool Prefix(StationController __instance)
             {
-                if (__instance.logicStation == null || !SaveLoadController.carsAndJobsLoadingFinished)
+                if (__instance.logicStation == null || !AStartGameData.carsAndJobsLoadingFinished)
                 {
                     return false;
                 }

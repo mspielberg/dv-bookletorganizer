@@ -1,68 +1,46 @@
-using HarmonyLib;
 using System;
-using UnityModManagerNet;
+using System.Reflection;
+using BepInEx;
+using BepInEx.Configuration;
+using HarmonyLib;
 
 namespace DvMod.BookletOrganizer
 {
-    [EnableReloading]
-    public static class Main
+    [BepInPlugin(GUID, "BookletOrganizer", Version)]
+    public class Main : BaseUnityPlugin
     {
-        public static UnityModManager.ModEntry? mod;
-        public static Settings settings = new Settings();
-        public static bool enabled;
+        private const string GUID = "com.github.mspielberg.dv-bookletorganizer";
+        private const string Version = "0.1.0";
+        
+        private static Main instance = null!;
+        private Harmony? harmony;
+        private ConfigEntry<bool> enableLogging = null!;
 
-        static public bool Load(UnityModManager.ModEntry modEntry)
+        private void Awake()
         {
-            mod = modEntry;
-
-            try
+            if (instance != null)
             {
-                var loaded = Settings.Load<Settings>(modEntry);
-                if (loaded.version == modEntry.Info.Version)
-                    settings = loaded;
-            }
-            catch
-            {
+                Logger.LogFatal($"{Info.Metadata.Name} is already loaded!");
+                Destroy(this);
+                return;
             }
 
-            mod.OnGUI = OnGUI;
-            mod.OnSaveGUI = OnSaveGUI;
-            mod.OnToggle = OnToggle;
+            instance = this;
 
-            return true;
+            enableLogging = Config.Bind("Debug", "Enable logging", false, "Whether to enable debug logging");
+
+            harmony = Harmony.CreateAndPatchAll(Assembly.GetExecutingAssembly());
         }
 
-        private static void OnGUI(UnityModManager.ModEntry modEntry)
+        private void OnDestroy()
         {
-            settings.Draw(modEntry);
-        }
-
-        private static void OnSaveGUI(UnityModManager.ModEntry modEntry)
-        {
-            settings.Save(modEntry);
-        }
-
-        private static bool OnToggle(UnityModManager.ModEntry modEntry, bool value)
-        {
-            Harmony harmony = new Harmony(modEntry.Info.Id);
-
-            if (value)
-                harmony.PatchAll();
-            else
-                harmony.UnpatchAll(modEntry.Info.Id);
-            return true;
-        }
-
-        public static void DebugLog(TrainCar car, Func<string> message)
-        {
-            if (car == PlayerManager.Car)
-                DebugLog(message);
+            harmony?.UnpatchSelf();
         }
 
         public static void DebugLog(Func<string> message)
         {
-            if (settings.enableLogging)
-                mod?.Logger.Log(message());
+            if (instance.enableLogging.Value)
+                instance.Logger.LogDebug(message());
         }
     }
 }
