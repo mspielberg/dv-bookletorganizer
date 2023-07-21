@@ -1,27 +1,25 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>DvMod.BookletOrganizer</RootNamespace>
-    <InformationalVersion>0.1.0</InformationalVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
+    <PackageReference Include="Krafs.Publicizer" Version="2.2.1"/>
+    <Publicize Include="Assembly-CSharp" IncludeCompilerGeneratedMembers="false"/>
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="RedworkDE.Publicizer" Version="0.2.2" />
-    <PublicizeAssembly Include="Assembly-CSharp" Private="True" Readonly="True" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="0Harmony"/>
+    <!-- Derail Valley -->
     <Reference Include="Assembly-CSharp"/>
+    <Reference Include="DV.ThingTypes"/>
     <Reference Include="DV.Utils"/>
-    <Reference Include="UnityEngine.CoreModule"/>
-    <Reference Include="UnityEngine.PhysicsModule"/>
-    <Reference Include="UnityModManager"/>
+    <!-- Unity -->
+    <PackageReference Include="UnityEngine.Modules" Version="2019.4.40" IncludeAssets="compile"/>
+    <!-- Mod Loader -->
+    <PackageReference Include="UnityModManager" Version="0.27.0"/>
   </ItemGroup>
 </Project>

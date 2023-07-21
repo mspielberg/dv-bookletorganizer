@@ -1,5 +1,5 @@
-using HarmonyLib;
 using System;
+using HarmonyLib;
 using UnityModManagerNet;
 
 namespace DvMod.BookletOrganizer
@@ -11,19 +11,18 @@ namespace DvMod.BookletOrganizer
         public static Settings settings = new Settings();
         public static bool enabled;
 
-        static public bool Load(UnityModManager.ModEntry modEntry)
+        public static bool Load(UnityModManager.ModEntry modEntry)
         {
             mod = modEntry;
 
             try
             {
-                var loaded = Settings.Load<Settings>(modEntry);
+                Settings? loaded = Settings.Load<Settings>(modEntry);
                 if (loaded.version == modEntry.Info.Version)
                     settings = loaded;
             }
             catch
-            {
-            }
+            { }
 
             mod.OnGUI = OnGUI;
             mod.OnSaveGUI = OnSaveGUI;
