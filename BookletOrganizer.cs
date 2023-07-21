@@ -125,7 +125,7 @@ namespace DvMod.BookletOrganizer
                         var parent = SingletonBehaviour<WorldMover>.Instance.originShiftParent;
                         var y = 0.001f;
 
-                        foreach (var (job, z, x) in jobTuples)
+                        foreach (var (job, z, x) in Main.settings.frontToBack ? jobTuples.Reverse() : jobTuples)
                         {
                             var localX = x + Random.Range(-PositionRandomizationRange, PositionRandomizationRange);
                             var localZ = z + Random.Range(-PositionRandomizationRange, PositionRandomizationRange);
@@ -135,7 +135,7 @@ namespace DvMod.BookletOrganizer
                                 __instance.jobBookletSpawnSurface.zSize * (0.5f - localZ) * ZSpaceToUse);
                             Main.DebugLog(() => $"{job.ID} @ {localPosition}");
                             var globalPosition = __instance.jobBookletSpawnSurface.transform.TransformPoint(localPosition);
-                            y += Main.settings.frontToBack ? -0.003f : 0.003f;
+                            y += 0.003f;
 
                             var angle = Random.Range(-RotationRandomizationRange, RotationRandomizationRange);
                             var rotation = __instance.jobBookletSpawnSurface.transform.rotation * Quaternion.Euler(0f, -90f + angle, 0f);
