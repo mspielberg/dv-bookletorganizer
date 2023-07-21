@@ -13,13 +13,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Derail Valley -->
+    <Reference Include="0Harmony"/>
+    <Reference Include="UnityEngine.CoreModule"/>
+    <Reference Include="UnityModManager"/>
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="Assembly-CSharp"/>
     <Reference Include="DV.ThingTypes"/>
     <Reference Include="DV.Utils"/>
-    <!-- Unity -->
-    <PackageReference Include="UnityEngine.Modules" Version="2019.4.40" IncludeAssets="compile"/>
-    <!-- Mod Loader -->
-    <PackageReference Include="UnityModManager" Version="0.27.0"/>
   </ItemGroup>
 </Project>
