@@ -4,7 +4,7 @@
     <LangVersion>8.0</LangVersion>
     <Nullable>enable</Nullable>
     <RootNamespace>DvMod.BookletOrganizer</RootNamespace>
-    <InformationalVersion>1.1.1</InformationalVersion>
+    <InformationalVersion>1.1.2</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,5 +22,6 @@
     <Reference Include="Assembly-CSharp"/>
     <Reference Include="DV.ThingTypes"/>
     <Reference Include="DV.Utils"/>
+    <Reference Include="WorldStreamer"/>
   </ItemGroup>
 </Project>

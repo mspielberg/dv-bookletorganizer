@@ -2,10 +2,10 @@
   "Id": "BookletOrganizer",
   "DisplayName": "Booklet Organizer",
   "Author": "Zeibach",
-  "Version": "1.1.1t",
+  "Version": "1.1.2",
   "AssemblyName": "BookletOrganizer.dll",
   "EntryMethod": "DvMod.BookletOrganizer.Main.Load",
-  "ManagerVersion": "0.32.2.0",
+  "ManagerVersion": "0.27.3",
   "HomePage": "https://www.nexusmods.com/derailvalley/mods/322",
   "Repository": "https://raw.githubusercontent.com/mspielberg/dv-bookletorganizer/master/resources/repository.json"
 }
