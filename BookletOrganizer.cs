@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using DV.Booklets;
 using DV.ThingTypes;
-using DV.Utils;
 using UnityEngine;
 
 namespace DvMod.BookletOrganizer
@@ -121,8 +120,8 @@ namespace DvMod.BookletOrganizer
                         var isInitialGeneration = __instance.processedNewJobs.Count == 0;
                         var toGenerate = __instance.logicStation.availableJobs.Where(job => !__instance.processedNewJobs.Contains(job));
 
-                        var jobTuples = isInitialGeneration ? InitialBookletPositions(toGenerate) : toGenerate.Select(SecondaryBookletPosition);
-                        var parent = SingletonBehaviour<WorldMover>.Instance.originShiftParent;
+                        var jobTuples = isInitialGeneration ? InitialBookletPositions(toGenerate) : toGenerate.Select(SecondaryBookletPosition);                        
+                        var parent = WorldMover.OriginShiftParent;
                         var y = 0.001f;
 
                         foreach (var (job, z, x) in Main.settings.frontToBack ? jobTuples.Reverse() : jobTuples)
